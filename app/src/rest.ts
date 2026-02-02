@@ -8,6 +8,8 @@ const CONFIG_DATA = {
   PREFIX_RNG: "E2",
 };
 const ASHEET_INFO = {
+  ASHEETNAME: "A",
+  BSHEETNAME: "B",
   RECEP_NO_COLUMN: 3,
   ACCEPT_NO_COLUMN: 4,
   PDF_LINK_COLUMN: 10,
@@ -20,9 +22,25 @@ const TARGETSHEET_INFO = {
   RINGI_RECEPTNO_COLUMN: 8,
   RINGI_ACCEPTNO_COLUMN: 11,
 };
-interface AppError {
-  message: string;
-  stack?: string;
+
+const CONSTVALUES = {
+  TOKEN: "token",
+  INIT_MESSAGE: "TOKENをプロパティーにセットします",
+  INIT_SUCCESS: "tokenをセットしました",
+  AREA_NAME: "首都圏",
+};
+/**!
+ *  プロパティーをセットする為メニューの認証に追加
+ */
+export function init() {
+  const ui = SpreadsheetApp.getUi();
+  const ret = ui.prompt(CONSTVALUES.INIT_MESSAGE, ui.ButtonSet.OK_CANCEL);
+  if (ret.getSelectedButton() === ui.Button.CANCEL) {
+    return;
+  }
+  const prop = PropertiesService.getScriptProperties();
+  prop.setProperty(CONSTVALUES.TOKEN, ret.getResponseText());
+  ui.alert(CONSTVALUES.INIT_SUCCESS);
 }
 
 /**
@@ -34,7 +52,7 @@ interface AppError {
 export function getRingiReception(): void {
   const sp = SpreadsheetApp.getActiveSpreadsheet();
   const configSh = sp.getSheetByName(CONFIG_DATA.CONFIGSHEETNAME);
-  const aSh = sp.getSheetByName("A");
+  const aSh = sp.getSheetByName(ASHEET_INFO.ASHEETNAME);
   if (!aSh || !configSh) {
     Logger.log("Aシート・Configシートがありません");
     return;
@@ -91,6 +109,7 @@ export function getRingiReception(): void {
 
 /**
  * @description 稟議決定ファイルをPDFリンクとして書き戻す
+ * GoogleDriveにアクセスする権限がない場合はエラー
  * @author yoshitaka <sato-yoshitaka@aktio.co.jp>
  * @date 08/01/2026
  * @returns {*}  {void}
@@ -98,7 +117,7 @@ export function getRingiReception(): void {
 function getRingiAcceptFileLink(): void {
   const sp = SpreadsheetApp.getActiveSpreadsheet();
   const configSh = sp.getSheetByName(CONFIG_DATA.CONFIGSHEETNAME);
-  const aSh = sp.getSheetByName("A");
+  const aSh = sp.getSheetByName(ASHEET_INFO.ASHEETNAME);
 
   if (!aSh || !configSh) {
     Logger.log("Aシート・Configシートがありません");
@@ -190,17 +209,21 @@ function getRingiReceptionSpreadsheetSheetName(
  * @returns {*}
  */
 export function fetchJobcanFormData() {
-  const token = PropertiesService.getScriptProperties().getProperty("token");
+  const token = PropertiesService.getScriptProperties().getProperty(
+    CONSTVALUES.TOKEN,
+  );
+  const ui = SpreadsheetApp.getUi();
   if (!token) {
     Logger.log("エラー: トークンが取得できません");
+    ui.alert("tokenが取得出来ませんでした");
     return;
   }
 
   const jobcan = new RestJobcan(token);
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const configSh = ss.getSheetByName(CONFIG_DATA.CONFIGSHEETNAME);
-  const aSh = ss.getSheetByName("A");
-  const bSh = ss.getSheetByName("B");
+  const aSh = ss.getSheetByName(ASHEET_INFO.ASHEETNAME);
+  const bSh = ss.getSheetByName(ASHEET_INFO.BSHEETNAME);
   if (!aSh || !bSh || !configSh) {
     return;
   }
@@ -209,7 +232,7 @@ export function fetchJobcanFormData() {
     B: parseInt(configSh.getRange(CONFIG_DATA.BCOUNT).getValue()),
   };
 
-  // 取得開始日の設定（昨日の日付）
+  // !取得開始日の設定（昨日の日付）
   const yesterdayDate = new Date();
   yesterdayDate.setDate(yesterdayDate.getDate() - 1);
   const yesterday = Utilities.formatDate(yesterdayDate, "JST", "yyyy/MM/dd");
@@ -240,10 +263,11 @@ export function fetchJobcanFormData() {
         const formName = req.form_name;
         const requestId = req.id.toString();
         const linkUrl = `https://ssl.wf.jobcan.jp/#/requests/${requestId}`;
+        //!Aを含んでいるか？
         const abSheet = formName.includes("A") ? aSh : bSh;
 
         const targetSheet = ss.getSheetByName(formName);
-        // フォーム名と一致する名前のシートがある場合のみ処理
+        //! フォーム名と一致する名前のシートがある場合のみ処理
         if (targetSheet) {
           // そのシートの既存IDリストを取得（キャッシュになければ作成）
           if (!existingIdsCache[formName]) {
@@ -255,16 +279,17 @@ export function fetchJobcanFormData() {
             Logger.log(`スキップ（登録済）: [${formName}] ID ${requestId}`);
           } else {
             const type = formName.includes("A") ? "A" : "B";
+            const areaName = CONSTVALUES.AREA_NAME;
             const serialNo = (counters[type]++).toString().padStart(4, "0");
-            const approvalRequestNo = `首都圏-${serialNo}`;
+            //! 連番設定をする場合は const approvalRequestNo = `${areaName}-${serialNo}`;
             const formula = `=HYPERLINK("https://ssl.wf.jobcan.jp/#/requests/${requestId}","${requestId}")`;
             const formData = [
               formula,
               req.applied_date,
               req.title,
-              approvalRequestNo,
+              //! 連番設定を追記する場合はコメント解除 approvalRequestNo,
             ];
-            // 詳細情報を取得して追記
+            //! 詳細情報を取得して追記
             const details = jobcan.getCustomezedItemsByRequestId(
               requestId,
               true,
@@ -274,10 +299,12 @@ export function fetchJobcanFormData() {
               //採番のロジックは決定待ち
               // details[0] が ID なので、ここをハイパーリンク数式に書き換える
               // 形式: =HYPERLINK("https://ssl.wf.jobcan.jp/#/requests/ID", "ID")
+              /* 工場とフォームサイズが違う場合に使用
               details[0] = "決裁待ち";
               if (formName.includes("工場")) {
                 details.splice(3, 0, details[2]);
               }
+              */
               const appendData = [...formData, ...details];
               abSheet.appendRow(appendData);
               targetSheet.appendRow(appendData);

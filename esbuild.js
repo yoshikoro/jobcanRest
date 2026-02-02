@@ -5,8 +5,12 @@ esbuild
     entryPoints: ["./app/src/main.ts"],
     bundle: true,
     minify: false,
+    minifyWhitespace: false,
+    minifyIdentifiers: false,
+    minifySyntax: false,
     outfile: "./dist/main.js",
     target: "ES2021",
+    keepNames: true,
     plugins: [GasPlugin],
     legalComments: "inline", // コメントを残す
     charset: "utf8", //アスキーコードではなく

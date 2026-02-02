@@ -16,9 +16,9 @@
     "cpapps": "cp ./appsscript.json ./app/dist/appsscript.json",
     "cpstatic": "cp ./src/static/* ./dist/",
     "nodecp": "node -e \"require('fs').cpSync('./appsscript.json','./dist/appsscript.json',{recursive:true})\"",
-    "nodecpw": "node -e \"require('fs').cpSync('./src/static/', './dist/', {recursive: true})\"",
+    "nodecpw": "node -e \"require('fs').cpSync('./app/src/static/', './dist/', {recursive: true})\"",
     "cp": "npm run nodecp && npm run node cpw",
-    "adeploy": "npm run nodecp && npm run build && npm run push",
+    "adeploy": "npm run nodecpw && npm run build && npm run push",
     "deploy": "npm run build && npm run push",
     "ndeploy": "npm run nbuild && npm run push",
     "clearn": "rm -f ./dist/*"

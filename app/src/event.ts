@@ -7,7 +7,7 @@ export function onOpen(): void {
   const ui = SpreadsheetApp.getUi();
   const mn = ui.createMenu("menu");
 
-  mn.addItem("認証", "getMailData");
+  mn.addItem("認証", "init");
   mn.addItem("本社の稟議データを取得", "getRingiReception");
   mn.addItem("ジョブカン接続", "showHtml");
   mn.addToUi();

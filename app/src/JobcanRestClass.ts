@@ -48,22 +48,23 @@ export class RestJobcan {
   public getCustomezedItemsByRequestId(
     request_id: string,
     onlyPart: boolean = true,
+    progress: string = "in_progress",
   ): string[] {
     const baseurl = this.BASEURL;
     const requestUrl = `${baseurl}v1/requests/${request_id}/`;
 
     let result: Jobcan.JobcanResult = this.getFetch(requestUrl);
     if (onlyPart) {
-      const INPROGRESS = "in_progress";
+      const INPROGRESS = progress;
       if (result.status !== INPROGRESS) {
-        return;
+        return [];
       }
     }
     let ret = [result.id, result.form_name];
     result.detail.customized_items.forEach(
       (element: Jobcan.CustomizedItem, index) => {
         Logger.log(element.title);
-        ret.push(element.content);
+        ret.push(element.content ?? "");
       },
     );
     return ret;
@@ -94,25 +95,18 @@ export class RestJobcan {
       },
     };
     //レスポンスを受ける変数
-    let res: GoogleAppsScript.URL_Fetch.HTTPResponse;
-    let result: T;
-    let resCode: number;
-    try {
-      res = UrlFetchApp.fetch(url, pram);
-      resCode = res.getResponseCode();
-      if (resCode == 200) {
-        const parseObject = JSON.parse(res.getContentText());
-        parseObject.resCode = 200;
-        //return object
-        result = parseObject;
-      } else {
-        // rescode is not 200 then error
-        throw new Error("not 200");
-      }
-    } catch (error) {
-      return error;
+    let res: GoogleAppsScript.URL_Fetch.HTTPResponse = UrlFetchApp.fetch(
+      url,
+      pram,
+    );
+    let resCode: number = res.getResponseCode();
+    const content = res.getContentText();
+    if (resCode === 200) {
+      return JSON.parse(content) as T;
+      // rescode is not 200 then error
     }
-
-    return result;
+    throw new Error(
+      `API Error: Status ${resCode}. Content: ${res.getContentText()}`,
+    );
   }
 }
