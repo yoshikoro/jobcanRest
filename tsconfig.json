@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "isolatedModules": true, // esbuildを使う場合の推奨設定
+    "noEmit": true // esbuildが書き出しを行うので、tscには書き出させない
+  },
+  "include": [
+    "app/src/**/*.ts",
+    "app/src/@types/**/*.d.ts"
+  ] // 今のesbuildの入り口に合わせて調整
+}

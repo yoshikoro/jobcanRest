@@ -1,0 +1,33 @@
+{
+  "name": "gas-esbuild-temp",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "bundle for gas",
+  "author": "yoshikoro",
+  "license": "ISC",
+  "dependencies": {
+    "@types/google-apps-script": "^2.0.8"
+  },
+  "scripts": {
+    "build": "node ./esbuild.js",
+    "nbuild": "tsc",
+    "push": "clasp push",
+    "open": "clasp open",
+    "cpapps": "cp ./appsscript.json ./app/dist/appsscript.json",
+    "cpstatic": "cp ./src/static/* ./dist/",
+    "nodecp": "node -e \"require('fs').cpSync('./appsscript.json','./dist/appsscript.json',{recursive:true})\"",
+    "nodecpw": "node -e \"require('fs').cpSync('./src/static/', './dist/', {recursive: true})\"",
+    "cp": "npm run nodecp && npm run node cpw",
+    "adeploy": "npm run nodecp && npm run build && npm run push",
+    "deploy": "npm run build && npm run push",
+    "ndeploy": "npm run nbuild && npm run push",
+    "clearn": "rm -f ./dist/*"
+  },
+  "devDependencies": {
+    "@types/node": "^25.0.3",
+    "esbuild": "^0.27.2",
+    "esbuild-gas-plugin": "^0.10.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}
