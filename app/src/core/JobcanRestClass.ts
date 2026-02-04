@@ -1,4 +1,11 @@
 //ref job2.d.ts
+/**
+ * @description ジョブカンに接続するクラス
+ * @author yoshitaka <sato-yoshitaka@aktio.co.jp>
+ * @date 04/02/2026
+ * @export
+ * @class RestJobcan
+ */
 export class RestJobcan {
   private BASEURL = `https://ssl.wf.jobcan.jp/wf_api/`;
   private token = "";
@@ -11,6 +18,37 @@ export class RestJobcan {
       this.token = finalToken;
     }
   }
+  /**
+   * @description ジョブカンからデータを取得してコールバックに渡す
+   * @author yoshitaka <sato-yoshitaka@aktio.co.jp>
+   * @date 04/02/2026
+   * @param {string} startDate
+   * @param {(request: Jobcan.V2RequestResult) => void} callback
+   * @memberof RestJobcan
+   */
+  public walkAllRequests(
+    startDate: string,
+    callback: (request: Jobcan.V2RequestResult) => void,
+  ) {
+    let nextUrl: string | undefined = undefined;
+    let hasNext = true;
+
+    while (hasNext) {
+      const response = this.getRequests(startDate, nextUrl);
+      const requests = response.results;
+
+      if (!requests || requests.length === 0) break;
+
+      requests.forEach(callback);
+
+      if (response.next) {
+        nextUrl = response.next;
+      } else {
+        hasNext = false;
+      }
+    }
+  }
+
   /**
    * @description
    * @author yoshitaka <sato-yoshitaka@aktio.co.jp>

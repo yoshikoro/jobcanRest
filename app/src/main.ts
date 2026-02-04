@@ -1,8 +1,8 @@
 import { doGet, onOpen, showHtml } from "./event";
-import { fetchJobcanFormData, getRingiReception, init } from "./rest";
+import { debugFetchAndDump } from "./restSample";
+import { init } from "./core/setup";
+//*基本構成*//
 global.onOpen = onOpen;
-global.fetchJobcanFormData = fetchJobcanFormData;
-global.getRingiReception = getRingiReception;
 global.doGet = doGet;
 global.showHtml = showHtml;
 global.init = init;
