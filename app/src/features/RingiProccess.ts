@@ -1,12 +1,9 @@
-import { RestJobcan } from "./JobcanRestClass";
-const CONFIG_DATA = {
-  CONFIGSHEETNAME: "config",
-  ACOUNT: "A2",
-  BCOUNT: "B2",
-  RINGI_ACCEPT_FOLDERID_RNG: "C2",
-  RINGI_RECEPT_SPID_RNG: "D2",
-  PREFIX_RNG: "E2",
-};
+import { CONFIG_DATA } from "../core/config";
+import { CONSTVALUES } from "../core/constants";
+import { RestJobcan } from "../core/JobcanRestClass";
+import { getExistingIdsSet } from "../core/utils/SheetUtils";
+
+/** 固有の定数を管理 */
 const ASHEET_INFO = {
   ASHEETNAME: "A",
   BSHEETNAME: "B",
@@ -22,26 +19,6 @@ const TARGETSHEET_INFO = {
   RINGI_RECEPTNO_COLUMN: 8,
   RINGI_ACCEPTNO_COLUMN: 11,
 };
-
-const CONSTVALUES = {
-  TOKEN: "token",
-  INIT_MESSAGE: "TOKENをプロパティーにセットします",
-  INIT_SUCCESS: "tokenをセットしました",
-  AREA_NAME: "首都圏",
-};
-/**!
- *  プロパティーをセットする為メニューの認証に追加
- */
-export function init() {
-  const ui = SpreadsheetApp.getUi();
-  const ret = ui.prompt(CONSTVALUES.INIT_MESSAGE, ui.ButtonSet.OK_CANCEL);
-  if (ret.getSelectedButton() === ui.Button.CANCEL) {
-    return;
-  }
-  const prop = PropertiesService.getScriptProperties();
-  prop.setProperty(CONSTVALUES.TOKEN, ret.getResponseText());
-  ui.alert(CONSTVALUES.INIT_SUCCESS);
-}
 
 /**
  * @description 本社稟議受付シートから決定番号を取得する
@@ -271,7 +248,7 @@ export function fetchJobcanFormData() {
         if (targetSheet) {
           // そのシートの既存IDリストを取得（キャッシュになければ作成）
           if (!existingIdsCache[formName]) {
-            existingIdsCache[formName] = getExistingIds(targetSheet);
+            existingIdsCache[formName] = getExistingIdsSet(targetSheet);
           }
 
           // IDがすでに存在するかチェック
@@ -336,18 +313,4 @@ export function fetchJobcanFormData() {
     const error = e as AppError;
     Logger.log("エラーが発生しました: " + error.message);
   }
-}
-
-/**
- * 指定したシートの1列目（ID列）を読み込み、重複チェック用のSetを返す
- */
-function getExistingIds(
-  sheet: GoogleAppsScript.Spreadsheet.Sheet,
-): Set<string> {
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 1) return new Set();
-
-  // A列のデータを取得し、文字列としてSetに格納
-  const ids = sheet.getRange(1, 1, lastRow, 1).getValues();
-  return new Set(ids.map((row) => row[0].toString()));
 }
