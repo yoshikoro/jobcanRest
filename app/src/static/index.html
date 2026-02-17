@@ -1,27 +1,114 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 
 <head>
-  <meta charset="UTF-8">
-  <title>getNumber</title>
+  <base target="_top">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+      padding: 20px;
+    }
+
+    .endpoint-card {
+      margin-bottom: 20px;
+      border-left: 5px solid #0d6efd;
+    }
+
+    pre {
+      background: #e9ecef;
+      padding: 10px;
+      border-radius: 5px;
+    }
+  </style>
+  <script>
+    /**
+      * 指定した日数前の日付を YYYY/MM/DD で返す
+    **/
+    function getPastDate(daysBefore) {
+      const d = new Date();
+      d.setDate(d.getDate() - daysBefore);
+
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const d_ = String(d.getDate()).padStart(2, '0');
+
+      return `${y}/${m}/${d_}`;
+    }
+
+    function updateLinks() {
+      // 2日前の日付を取得
+      const targetDate = getPastDate(2);
+
+      google.script.run
+        .withSuccessHandler((url) => {
+          if (!url) return;
+
+          const links = document.querySelectorAll('.api-link');
+          links.forEach(link => {
+            let query = link.getAttribute('data-query');
+
+            // data-query内の日付（2026-02-01等）を動的な日付に置換
+            // 今回はスラッシュ区切り（YYYY/MM/DD）を希望とのことなのでそのまま代入
+            query = query.replace(/\d{4}-\d{2}-\d{2}/, targetDate);
+
+            const fullUrl = url + query;
+            link.href = fullUrl;
+            link.innerText = fullUrl;
+          });
+        })
+        .getScriptUrl();
+    }
+
+    window.onload = updateLinks;
+  </script>
+  </script>
+  </script>
 </head>
 
 <body>
-  <form>
-    <input type="button" id="on" aria-disabled="false" value="ジョブカンデータを取得">
-  </form>
-  <div id="success"></div>
+  <div class="container">
+    <h1 class="mb-4">Jobcan Proxy API 🚀</h1>
+    <p class="text-muted">Jobcan APIへのリクエストを中継するプロキシサービスです。</p>
+
+    <div class="card endpoint-card shadow-sm">
+      <div class="card-body">
+        <h5 class="card-title">1. 全件取得 (Walk)</h5>
+        <p class="card-text">指定した日付以降の申請データを全件取得します。</p>
+        <table class="table table-sm">
+          <tr>
+            <th>action</th>
+            <td><code>walk</code></td>
+          </tr>
+          <tr>
+            <th>date</th>
+            <td><code>YYYY-MM-DD</code></td>
+          </tr>
+        </table>
+        <h6>Example:</h6>
+        <pre><a href="#" class="api-link" data-query="?action=walk&date=2026-02-01" target="_blank">Loading...</a></pre>
+      </div>
+    </div>
+
+    <div class="card endpoint-card shadow-sm" style="border-left-color: #198754;">
+      <div class="card-body">
+        <h5 class="card-title">2. 詳細取得 (Detail)</h5>
+        <p class="card-text">申請IDを指定して、カスタマイズ項目を含む詳細を取得します。</p>
+        <table class="table table-sm">
+          <tr>
+            <th>action</th>
+            <td><code>detail</code></td>
+          </tr>
+          <tr>
+            <th>id</th>
+            <td>Jobcanの申請ID</td>
+          </tr>
+        </table>
+        <h6>Example:</h6>
+        <pre><a href="#" class="api-link" data-query="?action=detail&id=108229" target="_blank">Loading...</a></pre>
+      </div>
+    </div>
+  </div>
 </body>
-
-<script>
-  const onid = document.getElementById("on")
-  onid.addEventListener("click", (ev) => {
-    ev.currentTarget.style.visibility = "hidden"
-    google.script.run.withSuccessHandler(() => {
-      document.getElementById("success").innerText = "success"
-    }).fetchJobcanFormData()
-
-  })
-</script>
 
 </html>
